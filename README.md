@@ -27,7 +27,7 @@ Brother printer → FTP → OwnScan server → OwnCloud
 
 ## Requirements
 
-- Debian or Ubuntu
+- Ubuntu 24.04 or higher
 - OwnCloud instance on the same local network
 - Brother printer with **Scan to FTP** support (see supported printers below)
 
@@ -44,97 +44,42 @@ Brother printer → FTP → OwnScan server → OwnCloud
 
 These models are confirmed to support Scan to FTP based on official Brother documentation.
 
-**MFC inkjet**
+| MFC inkjet | Laser mono MFC | Laser colour MFC |
+|------------|----------------|------------------|
+| MFC-J4510DW | MFC-L2710DW | MFC-L3720CDW |
+| MFC-J4610DW | MFC-L2713DW | MFC-L3750CDW |
+| MFC-J4710DW | MFC-L2730DW | MFC-L3760CDW |
+| MFC-J5330DW | MFC-L2750DW | MFC-L3770CDW |
+| MFC-J5340DW | MFC-L2770DW | MFC-L3780CDW |
+| MFC-J5720DW | MFC-L2800DW | MFC-9130CW |
+| MFC-J5730DW | MFC-L2820DW | MFC-9330CDW |
+| MFC-J5740DW | MFC-L2880DW | MFC-9340CDW |
+| MFC-J5910DW | MFC-L2900DW | |
+| MFC-J5920DW | MFC-L2920DW | |
+| MFC-J5930DW | | |
+| MFC-J5945DW | | |
+| MFC-J5955DW | | |
+| MFC-J6510DW | | |
+| MFC-J6530DW | | |
+| MFC-J6540DW | | |
+| MFC-J6555DW | | |
+| MFC-J6910DW | | |
+| MFC-J6920DW | | |
+| MFC-J6930DW | | |
+| MFC-J6935DW | | |
+| MFC-J6940DW | | |
+| MFC-J6945DW | | |
+| MFC-J6955DW | | |
 
-| Model |
-|-------|
-| MFC-J4510DW |
-| MFC-J4610DW |
-| MFC-J4710DW |
-| MFC-J5330DW |
-| MFC-J5340DW |
-| MFC-J5720DW |
-| MFC-J5730DW |
-| MFC-J5740DW |
-| MFC-J5910DW |
-| MFC-J5920DW |
-| MFC-J5930DW |
-| MFC-J5945DW |
-| MFC-J5955DW |
-| MFC-J6510DW |
-| MFC-J6530DW |
-| MFC-J6540DW |
-| MFC-J6555DW |
-| MFC-J6910DW |
-| MFC-J6920DW |
-| MFC-J6930DW |
-| MFC-J6935DW |
-| MFC-J6940DW |
-| MFC-J6945DW |
-| MFC-J6955DW |
-
-**Laser mono MFC**
-
-| Model |
-|-------|
-| MFC-L2710DW |
-| MFC-L2713DW |
-| MFC-L2730DW |
-| MFC-L2750DW |
-| MFC-L2770DW |
-| MFC-L2800DW |
-| MFC-L2820DW |
-| MFC-L2880DW |
-| MFC-L2900DW |
-| MFC-L2920DW |
-
-**Laser colour MFC**
-
-| Model |
-|-------|
-| MFC-L3720CDW |
-| MFC-L3750CDW |
-| MFC-L3760CDW |
-| MFC-L3770CDW |
-| MFC-L3780CDW |
-| MFC-9130CW |
-| MFC-9330CDW |
-| MFC-9340CDW |
-
-**Laser mono DCP**
-
-| Model |
-|-------|
-| DCP-L2530DW |
-| DCP-L2537DW |
-| DCP-L2550DW |
-| DCP-L2640DW |
-| DCP-L2680DW |
-
-**Laser colour DCP**
-
-| Model |
-|-------|
-| DCP-L3551CDW |
-| DCP-L3560CDW |
-| DCP-9020CDN |
-
-**Laser mono HL**
-
-| Model |
-|-------|
-| HL-L2395DW |
-| HL-L2464DW |
-| HL-L2465DW |
-| HL-L2480DW |
-
-**Laser colour HL**
-
-| Model |
-|-------|
-| HL-L3290CDW |
-| HL-L3300CDW |
-| HL-3180CDW |
+| Laser mono DCP | Laser colour DCP | Laser HL |
+|----------------|------------------|----------|
+| DCP-L2530DW | DCP-L3551CDW | HL-L2395DW |
+| DCP-L2537DW | DCP-L3560CDW | HL-L2464DW |
+| DCP-L2550DW | DCP-9020CDN | HL-L2465DW |
+| DCP-L2640DW | | HL-L2480DW |
+| DCP-L2680DW | | HL-L3290CDW |
+| | | HL-L3300CDW |
+| | | HL-3180CDW |
 
 > This list is based on official Brother documentation. If your model has Scan to FTP, it will work with OwnScan.
 

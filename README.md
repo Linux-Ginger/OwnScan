@@ -44,65 +44,97 @@ Brother printer → FTP → OwnScan server → OwnCloud
 
 These models are confirmed to support Scan to FTP based on official Brother documentation.
 
-| Model | Series |
-|-------|--------|
-| MFC-J4510DW | Inkjet MFC |
-| MFC-J4610DW | Inkjet MFC |
-| MFC-J4710DW | Inkjet MFC |
-| MFC-J5330DW | Inkjet MFC |
-| MFC-J5340DW | Inkjet MFC |
-| MFC-J5720DW | Inkjet MFC |
-| MFC-J5730DW | Inkjet MFC |
-| MFC-J5740DW | Inkjet MFC |
-| MFC-J5910DW | Inkjet MFC |
-| MFC-J5920DW | Inkjet MFC |
-| MFC-J5930DW | Inkjet MFC |
-| MFC-J5945DW | Inkjet MFC |
-| MFC-J5955DW | Inkjet MFC |
-| MFC-J6510DW | Inkjet MFC |
-| MFC-J6530DW | Inkjet MFC |
-| MFC-J6540DW | Inkjet MFC |
-| MFC-J6555DW | Inkjet MFC |
-| MFC-J6910DW | Inkjet MFC |
-| MFC-J6920DW | Inkjet MFC |
-| MFC-J6930DW | Inkjet MFC |
-| MFC-J6935DW | Inkjet MFC |
-| MFC-J6940DW | Inkjet MFC |
-| MFC-J6945DW | Inkjet MFC |
-| MFC-J6955DW | Inkjet MFC |
-| MFC-L2710DW | Laser mono MFC |
-| MFC-L2713DW | Laser mono MFC |
-| MFC-L2730DW | Laser mono MFC |
-| MFC-L2750DW | Laser mono MFC |
-| MFC-L2770DW | Laser mono MFC |
-| MFC-L2800DW | Laser mono MFC |
-| MFC-L2820DW | Laser mono MFC |
-| MFC-L2880DW | Laser mono MFC |
-| MFC-L2900DW | Laser mono MFC |
-| MFC-L2920DW | Laser mono MFC |
-| MFC-L3750CDW | Laser colour MFC |
-| MFC-L3770CDW | Laser colour MFC |
-| MFC-L3720CDW | Laser colour MFC |
-| MFC-L3760CDW | Laser colour MFC |
-| MFC-L3780CDW | Laser colour MFC |
-| MFC-9130CW | Laser colour MFC |
-| MFC-9330CDW | Laser colour MFC |
-| MFC-9340CDW | Laser colour MFC |
-| DCP-L2530DW | Laser mono DCP |
-| DCP-L2537DW | Laser mono DCP |
-| DCP-L2550DW | Laser mono DCP |
-| DCP-L2640DW | Laser mono DCP |
-| DCP-L2680DW | Laser mono DCP |
-| DCP-L3551CDW | Laser colour DCP |
-| DCP-L3560CDW | Laser colour DCP |
-| DCP-9020CDN | Laser colour DCP |
-| HL-L2395DW | Laser mono HL |
-| HL-L2464DW | Laser mono HL |
-| HL-L2465DW | Laser mono HL |
-| HL-L2480DW | Laser mono HL |
-| HL-L3290CDW | Laser colour HL |
-| HL-L3300CDW | Laser colour HL |
-| HL-3180CDW | Laser colour HL |
+**MFC inkjet**
+
+| Model |
+|-------|
+| MFC-J4510DW |
+| MFC-J4610DW |
+| MFC-J4710DW |
+| MFC-J5330DW |
+| MFC-J5340DW |
+| MFC-J5720DW |
+| MFC-J5730DW |
+| MFC-J5740DW |
+| MFC-J5910DW |
+| MFC-J5920DW |
+| MFC-J5930DW |
+| MFC-J5945DW |
+| MFC-J5955DW |
+| MFC-J6510DW |
+| MFC-J6530DW |
+| MFC-J6540DW |
+| MFC-J6555DW |
+| MFC-J6910DW |
+| MFC-J6920DW |
+| MFC-J6930DW |
+| MFC-J6935DW |
+| MFC-J6940DW |
+| MFC-J6945DW |
+| MFC-J6955DW |
+
+**Laser mono MFC**
+
+| Model |
+|-------|
+| MFC-L2710DW |
+| MFC-L2713DW |
+| MFC-L2730DW |
+| MFC-L2750DW |
+| MFC-L2770DW |
+| MFC-L2800DW |
+| MFC-L2820DW |
+| MFC-L2880DW |
+| MFC-L2900DW |
+| MFC-L2920DW |
+
+**Laser colour MFC**
+
+| Model |
+|-------|
+| MFC-L3720CDW |
+| MFC-L3750CDW |
+| MFC-L3760CDW |
+| MFC-L3770CDW |
+| MFC-L3780CDW |
+| MFC-9130CW |
+| MFC-9330CDW |
+| MFC-9340CDW |
+
+**Laser mono DCP**
+
+| Model |
+|-------|
+| DCP-L2530DW |
+| DCP-L2537DW |
+| DCP-L2550DW |
+| DCP-L2640DW |
+| DCP-L2680DW |
+
+**Laser colour DCP**
+
+| Model |
+|-------|
+| DCP-L3551CDW |
+| DCP-L3560CDW |
+| DCP-9020CDN |
+
+**Laser mono HL**
+
+| Model |
+|-------|
+| HL-L2395DW |
+| HL-L2464DW |
+| HL-L2465DW |
+| HL-L2480DW |
+
+**Laser colour HL**
+
+| Model |
+|-------|
+| HL-L3290CDW |
+| HL-L3300CDW |
+| HL-3180CDW |
 
 > This list is based on official Brother documentation. If your model has Scan to FTP, it will work with OwnScan.
 

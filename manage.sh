@@ -9,6 +9,9 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
+CONFIG_DIR="/etc/ownscan"
+OWNSCAN_CONFIG="$CONFIG_DIR/config"
+
 # Check root
 if [ "$EUID" -ne 0 ]; then
     echo -e "${RED}Please run as root${NC}"
@@ -16,10 +19,12 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # Check if OwnScan is installed
-if [ ! -d "/home/ownscan" ]; then
+if [ ! -d "$CONFIG_DIR" ]; then
     echo -e "${RED}OwnScan is not installed. Run install.sh first.${NC}"
     exit 1
 fi
+
+source "$OWNSCAN_CONFIG" 2>/dev/null || true
 
 # ─────────────────────────────────────────
 # List users
@@ -40,7 +45,6 @@ add_user() {
     FTP_USER=$(whiptail --title "Add user" --inputbox "Enter a username for this user (used for FTP login):" 8 60 3>&1 1>&2 2>&3)
     [ -z "$FTP_USER" ] && return
 
-    # Check if user already exists
     if [ -f "/home/ownscan/$FTP_USER.env" ]; then
         whiptail --title "Error" --msgbox "User '$FTP_USER' already exists." 8 50
         return
@@ -213,15 +217,43 @@ delete_user() {
 }
 
 # ─────────────────────────────────────────
+# Auto-update settings
+# ─────────────────────────────────────────
+toggle_autoupdate() {
+    if [ "$OWNSCAN_AUTO_UPDATE" = "true" ]; then
+        CURRENT="enabled"
+    else
+        CURRENT="disabled"
+    fi
+
+    if whiptail --title "Auto-update" --yesno "\
+Auto-update is currently $CURRENT.\n\
+\n\
+Enable auto-update?\n\
+\n\
+Yes: OwnScan updates automatically every 24 hours.\n\
+No:  OwnScan notifies you on login when an update is available." 14 65; then
+        sed -i "s/^OWNSCAN_AUTO_UPDATE=.*/OWNSCAN_AUTO_UPDATE=true/" "$OWNSCAN_CONFIG"
+        whiptail --title "Done" --msgbox "Auto-update enabled." 8 50
+    else
+        sed -i "s/^OWNSCAN_AUTO_UPDATE=.*/OWNSCAN_AUTO_UPDATE=false/" "$OWNSCAN_CONFIG"
+        # Remove motd if exists
+        rm -f /etc/update-motd.d/99-ownscan-update
+        whiptail --title "Done" --msgbox "Auto-update disabled." 8 50
+    fi
+}
+
+# ─────────────────────────────────────────
 # Main menu
 # ─────────────────────────────────────────
 while true; do
-    ACTION=$(whiptail --title "OwnScan - User management" --menu "What do you want to do?" 16 60 5 \
+    ACTION=$(whiptail --title "OwnScan - User management" --menu "What do you want to do?" 18 60 6 \
         "1" "List users" \
         "2" "Add user" \
         "3" "Edit user" \
         "4" "Delete user" \
-        "5" "Exit" \
+        "5" "Auto-update settings" \
+        "6" "Exit" \
         3>&1 1>&2 2>&3)
 
     case $ACTION in
@@ -229,7 +261,8 @@ while true; do
         2) add_user ;;
         3) edit_user ;;
         4) delete_user ;;
-        5) exit 0 ;;
+        5) toggle_autoupdate ;;
+        6) exit 0 ;;
         *) exit 0 ;;
     esac
 done

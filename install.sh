@@ -65,11 +65,12 @@ RELEASES_JSON=$(curl -fsSL --connect-timeout 5 "$GITHUB_API" 2>/dev/null || echo
 if [ -n "$RELEASES_JSON" ] && echo "$RELEASES_JSON" | grep -q '"tag_name"'; then
     MENU_ITEMS=()
     while IFS= read -r line; do
-        TAG=$(echo "$line" | grep '"tag_name"' | sed 's/.*"tag_name": *"\(.*\)".*/\1/')
-        DATE=$(echo "$line" | grep '"published_at"' | sed 's/.*"published_at": *"\([0-9-]*\).*/\1/')
+        TAG=$(echo "$line" | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
+        DATE=$(echo "$line" | sed 's/.*"published_at": *"\([0-9-]*\).*/\1/')
         [ -z "$TAG" ] && continue
+        [ "$TAG" = "$line" ] && continue
         MENU_ITEMS+=("$TAG" "$DATE")
-    done <<< "$(echo "$RELEASES_JSON" | grep -E '"tag_name"|"published_at"' | paste - -)"
+    done <<< "$(echo "$RELEASES_JSON" | grep '"tag_name"\|"published_at"' | paste - -)"
 
     if [ ${#MENU_ITEMS[@]} -gt 0 ]; then
         SELECTED_VERSION=$(whiptail --title "Select version" --menu \

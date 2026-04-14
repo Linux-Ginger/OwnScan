@@ -76,6 +76,7 @@ if [ -n "$RELEASES_JSON" ] && echo "$RELEASES_JSON" | grep -q '"tag_name"'; then
             "Choose which version to install:" 18 60 8 \
             "${MENU_ITEMS[@]}" \
             3>&1 1>&2 2>&3) || SELECTED_VERSION="${MENU_ITEMS[0]}"
+        SELECTED_VERSION=$(echo "$SELECTED_VERSION" | tr -d '[:space:]')
     fi
 else
     whiptail --title "Version" --msgbox \

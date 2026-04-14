@@ -60,7 +60,7 @@ fi
 # ─────────────────────────────────────────
 SELECTED_VERSION="main"
 
-RELEASES_JSON=$(curl -fsSL "$GITHUB_API" 2>/dev/null || echo "")
+RELEASES_JSON=$(curl -fsSL --connect-timeout 5 "$GITHUB_API" 2>/dev/null || echo "")
 
 if [ -n "$RELEASES_JSON" ] && echo "$RELEASES_JSON" | grep -q '"tag_name"'; then
     MENU_ITEMS=()
@@ -79,7 +79,8 @@ if [ -n "$RELEASES_JSON" ] && echo "$RELEASES_JSON" | grep -q '"tag_name"'; then
     fi
 else
     whiptail --title "Version" --msgbox \
-        "No releases found on GitHub.\nInstalling latest version from main branch." 8 58
+        "No releases found on GitHub.
+Installing latest version from main branch." 8 58
 fi
 
 # ─────────────────────────────────────────
@@ -143,8 +144,10 @@ mkdir -p "$CONFIG_DIR"
 # Save version and config
 # ─────────────────────────────────────────
 if [ "$SELECTED_VERSION" = "main" ]; then
-    OWNSCAN_VERSION=$(curl -fsSL "$GITHUB_BASE_URL/main/version.txt" 2>/dev/null \
-        | tr -d '[:space:]' || echo "dev")
+    OWNSCAN_VERSION=$(curl -fsSL --connect-timeout 5 \
+        "$GITHUB_BASE_URL/main/version.txt" 2>/dev/null \
+        | tr -d '[:space:]')
+    [ -z "$OWNSCAN_VERSION" ] && OWNSCAN_VERSION="dev"
 else
     OWNSCAN_VERSION="$SELECTED_VERSION"
 fi
@@ -216,29 +219,34 @@ whiptail --title "OwnScan Installer" --msgbox \
 "You will now enter your OwnCloud login credentials
 and set up a user for your Brother printer.
 
-Each user gets their own FTP login on this server.
+Each user gets their own login on this server.
 When scanning, the printer uses that login to send
 the file to OwnScan, which then uploads it to the
-correct OwnCloud account.
-
-Note: all names and passwords are case-sensitive.
-      One wrong character and it will not work." 16 58
+correct OwnCloud account." 14 58
 
 add_user() {
-    # Loop for username with back option
+    # Username
     while true; do
         FTP_USER=$(whiptail --title "Add user" --inputbox \
 "Choose a name for this user.
 This is the login name the printer will use.
 
 Use only letters and numbers, no spaces.
-Example: john or printer1
+Example: john or printer1" \
+12 58 3>&1 1>&2 2>&3)
+        EXIT=$?
+        [ $EXIT -ne 0 ] && return
 
-Note: this name is case-sensitive." \
-14 58 3>&1 1>&2 2>&3) || return
-        [ -z "$FTP_USER" ] && continue
+        if [ -z "$FTP_USER" ]; then
+            whiptail --title "Error" --msgbox "Username cannot be empty." 8 40
+            continue
+        fi
 
-        # Confirm username
+        if [ -f "/home/ownscan/$FTP_USER.env" ]; then
+            whiptail --title "Error" --msgbox "User '$FTP_USER' already exists." 8 50
+            continue
+        fi
+
         if whiptail --title "Confirm username" --yesno \
 "The username will be: $FTP_USER
 
@@ -247,42 +255,92 @@ Is this correct?" 8 40; then
         fi
     done
 
-    FTP_PASS=$(whiptail --title "Add user" --passwordbox \
+    # Printer password
+    while true; do
+        FTP_PASS=$(whiptail --title "Add user" --passwordbox \
 "Choose a password for the printer login.
 
 This is NOT your OwnCloud password.
 This is a new password you choose yourself,
 which the printer will use to connect to OwnScan." \
-12 58 3>&1 1>&2 2>&3) || return
-    [ -z "$FTP_PASS" ] && return
+12 58 3>&1 1>&2 2>&3)
+        EXIT=$?
+        [ $EXIT -ne 0 ] && return
+        if [ -z "$FTP_PASS" ]; then
+            whiptail --title "Error" --msgbox "Password cannot be empty." 8 40
+            continue
+        fi
+        break
+    done
 
-    OC_URL=$(whiptail --title "Add user" --inputbox \
+    # OwnCloud URL
+    while true; do
+        OC_URL=$(whiptail --title "Add user" --inputbox \
 "Enter your OwnCloud server address.
-Example: http://192.168.1.10" \
-10 58 3>&1 1>&2 2>&3) || return
-    [ -z "$OC_URL" ] && return
+Example: 192.168.1.10" \
+10 58 3>&1 1>&2 2>&3)
+        EXIT=$?
+        [ $EXIT -ne 0 ] && return
+        if [ -z "$OC_URL" ]; then
+            whiptail --title "Error" --msgbox "OwnCloud URL cannot be empty." 8 45
+            continue
+        fi
+        OC_URL=$(echo "$OC_URL" | sed 's|^https\?://||')
+        OC_URL="http://$OC_URL"
+        break
+    done
 
-    OC_USER=$(whiptail --title "Add user" --inputbox \
+    # OwnCloud username
+    while true; do
+        OC_USER=$(whiptail --title "Add user" --inputbox \
 "Enter your OwnCloud username.
 This is the username you use to log in to OwnCloud.
 
 Note: case-sensitive." \
-12 58 3>&1 1>&2 2>&3) || return
-    [ -z "$OC_USER" ] && return
+12 58 3>&1 1>&2 2>&3)
+        EXIT=$?
+        [ $EXIT -ne 0 ] && return
+        if [ -z "$OC_USER" ]; then
+            whiptail --title "Error" --msgbox "OwnCloud username cannot be empty." 8 45
+            continue
+        fi
+        break
+    done
 
-    OC_PASS=$(whiptail --title "Add user" --passwordbox \
+    # OwnCloud password
+    while true; do
+        OC_PASS=$(whiptail --title "Add user" --passwordbox \
 "Enter your OwnCloud password.
-This is the password you use to log in to OwnCloud." \
-10 58 3>&1 1>&2 2>&3) || return
-    [ -z "$OC_PASS" ] && return
+This is the password you use to log in to OwnCloud.
 
-    OC_FOLDER=$(whiptail --title "Add user" --inputbox \
+Note: case-sensitive." \
+12 58 3>&1 1>&2 2>&3)
+        EXIT=$?
+        [ $EXIT -ne 0 ] && return
+        if [ -z "$OC_PASS" ]; then
+            whiptail --title "Error" --msgbox "OwnCloud password cannot be empty." 8 45
+            continue
+        fi
+        break
+    done
+
+    # OwnCloud folder
+    while true; do
+        OC_FOLDER=$(whiptail --title "Add user" --inputbox \
 "Enter the OwnCloud folder where scans will be saved.
 
 If this folder does not exist, it will be created." \
-12 58 "Scans" 3>&1 1>&2 2>&3) || return
-    [ -z "$OC_FOLDER" ] && OC_FOLDER="Scans"
+12 58 "Scans" 3>&1 1>&2 2>&3)
+        EXIT=$?
+        [ $EXIT -ne 0 ] && return
+        if [ -z "$OC_FOLDER" ]; then
+            whiptail --title "Error" --msgbox "Folder name cannot be empty." 8 40
+            continue
+        fi
+        break
+    done
 
+    # Create FTP user
     SCAN_DIR="/home/ftpscans/$FTP_USER"
     mkdir -p "$SCAN_DIR"
     useradd -m -s /bin/false -d "$SCAN_DIR" "$FTP_USER" 2>/dev/null || true
@@ -348,7 +406,7 @@ Configure your Brother printer with these settings:
   Port:          21
   Passive mode:  ON
 
-Scans will appear in OwnCloud folder: $OC_FOLDER" 18 58
+Scans will appear in OwnCloud folder: $OC_FOLDER" 20 58
 }
 
 add_user
@@ -365,9 +423,12 @@ whiptail --title "OwnScan Installer" --msgbox \
 "OwnScan $OWNSCAN_VERSION installed successfully!
 
 Available commands:
-  ownscan --version     Show current version
-  ownscan --manage      Manage users
+  ownscan --version     Show installed version
+  ownscan --manage      Add, edit or remove users
   ownscan --update      Update OwnScan
   ownscan --uninstall   Uninstall OwnScan
+  ownscan --help        Show all commands
 
 Auto-update: $AUTO_UPDATE" 16 58
+
+reset

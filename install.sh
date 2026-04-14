@@ -69,7 +69,7 @@ if [ -n "$RELEASES_JSON" ] && echo "$RELEASES_JSON" | grep -q '"tag_name"'; then
         DATE=$(echo "$line" | sed 's/.*"published_at": *"\([0-9-]*\).*/\1/')
         [ -z "$TAG" ] && continue
         [ "$TAG" = "$line" ] && continue
-        MENU_ITEMS+=("$TAG" "$DATE")
+        MENU_ITEMS+=("$TAG" "| $DATE")
     done <<< "$(echo "$RELEASES_JSON" | grep '"tag_name"\|"published_at"' | paste - -)"
 
     if [ ${#MENU_ITEMS[@]} -gt 0 ]; then
@@ -135,7 +135,8 @@ else
     ZIP_URL="https://github.com/Linux-Ginger/OwnScan/archive/refs/tags/${SELECTED_VERSION}.zip"
 fi
 
-whiptail --title "OwnScan Installer" --infobox "Downloading OwnScan scripts..." 8 60
+clear
+echo "Downloading OwnScan scripts, please wait..."
 
 apt-get install -y unzip > /dev/null 2>&1
 curl -fsSL "$ZIP_URL" -o "$TMP_DIR/ownscan.zip"

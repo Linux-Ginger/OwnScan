@@ -238,17 +238,19 @@ edit_user() {
         return
     fi
 
-    MENU_ITEMS=()
+    MENU_ITEMS=("< Back" "")
     I=1
     for U in "${USERS[@]}"; do
         MENU_ITEMS+=("$I. $U" "")
         I=$((I+1))
     done
 
-    FTP_USER_ENTRY=$(whiptail --title "Edit user" --cancel-button "Back" --menu \
+    FTP_USER_ENTRY=$(whiptail --title "Edit user" --nocancel --menu \
         "Select user to edit:" 16 50 8 \
         "${MENU_ITEMS[@]}" \
         3>&1 1>&2 2>&3) || return
+
+    [ "$FTP_USER_ENTRY" = "< Back" ] && return
 
     # Strip number prefix
     FTP_USER=$(echo "$FTP_USER_ENTRY" | sed 's/^[0-9]*\. //')
@@ -323,17 +325,19 @@ delete_user() {
         return
     fi
 
-    MENU_ITEMS=()
+    MENU_ITEMS=("< Back" "")
     I=1
     for U in "${USERS[@]}"; do
         MENU_ITEMS+=("$I. $U" "")
         I=$((I+1))
     done
 
-    FTP_USER_ENTRY=$(whiptail --title "Delete user" --cancel-button "Back" --menu \
+    FTP_USER_ENTRY=$(whiptail --title "Delete user" --nocancel --menu \
         "Select user to delete:" 16 50 8 \
         "${MENU_ITEMS[@]}" \
         3>&1 1>&2 2>&3) || return
+
+    [ "$FTP_USER_ENTRY" = "< Back" ] && return
 
     FTP_USER=$(echo "$FTP_USER_ENTRY" | sed 's/^[0-9]*\. //')
 

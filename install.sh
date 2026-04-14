@@ -135,8 +135,7 @@ else
     ZIP_URL="https://github.com/Linux-Ginger/OwnScan/archive/refs/tags/${SELECTED_VERSION}.zip"
 fi
 
-clear
-echo "Downloading OwnScan scripts, please wait..."
+whiptail --title "OwnScan Installer" --infobox "Downloading OwnScan scripts, please wait..." 8 60
 
 apt-get install -y unzip > /dev/null 2>&1
 curl -fsSL "$ZIP_URL" -o "$TMP_DIR/ownscan.zip"

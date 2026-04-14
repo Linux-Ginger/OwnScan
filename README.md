@@ -20,14 +20,13 @@ OwnScan bridges your Brother printer and OwnCloud. Scans are sent via FTP and au
 Brother printer → FTP → OwnScan server → OwnCloud
 ```
 
-1. The Brother printer scans a document and sends it via FTP to the server running OwnScan.
-2. OwnScan detects the new file and uploads it to OwnCloud via WebDAV (curl).
-3. The local file is deleted after upload.
-4. The scan appears in your OwnCloud folder.
+When you scan a document on your Brother printer, it sends the file via FTP to the OwnScan server. OwnScan instantly detects the new file and uploads it directly to your OwnCloud account via WebDAV. Once the upload is complete, OwnScan deletes the file from the server — so the scan is stored permanently on OwnCloud, not on the OwnScan server. This means the OwnScan server requires almost no storage space, and your scans are always accessible through OwnCloud.
+
+In short: scan on your printer → file lands in OwnCloud → OwnScan server stays empty.
 
 ## Requirements
 
-- Ubuntu 24.04 or higher
+- Ubuntu 24.04 LTS or higher
 - OwnCloud instance on the same local network
 - Brother printer with **Scan to FTP** support (see supported printers below)
 

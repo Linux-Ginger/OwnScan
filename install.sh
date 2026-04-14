@@ -123,20 +123,40 @@ mkdir -p "$INSTALL_DIR"
 mkdir -p "$CONFIG_DIR"
 
 # ─────────────────────────────────────────
-# Download scripts from GitHub
+# Download and install scripts
 # ─────────────────────────────────────────
+TMP_DIR=$(mktemp -d)
+
 {
-    echo 20
-    BRANCH="$SELECTED_VERSION"
-    curl -fsSL "$GITHUB_BASE_URL/$BRANCH/ownscan.sh" -o "$INSTALL_DIR/ownscan.sh"
-    echo 50
-    curl -fsSL "$GITHUB_BASE_URL/$BRANCH/manage.sh" -o "$INSTALL_DIR/manage.sh"
+    echo 10
+    if [ "$SELECTED_VERSION" = "main" ]; then
+        ZIP_URL="https://github.com/Linux-Ginger/ownscan/archive/refs/heads/main.zip"
+    else
+        ZIP_URL="https://github.com/Linux-Ginger/ownscan/archive/refs/tags/$SELECTED_VERSION.zip"
+    fi
+
+    curl -fsSL "$ZIP_URL" -o "$TMP_DIR/ownscan.zip"
+    echo 40
+    apt-get install -y unzip > /dev/null 2>&1
+    unzip -q "$TMP_DIR/ownscan.zip" -d "$TMP_DIR"
     echo 70
-    curl -fsSL "$GITHUB_BASE_URL/$BRANCH/uninstall.sh" -o "$INSTALL_DIR/uninstall.sh"
+
+    # Find extracted folder (name varies per version)
+    EXTRACTED=$(find "$TMP_DIR" -maxdepth 1 -mindepth 1 -type d | head -1)
+
+    # Install all .sh files except install.sh
+    for SCRIPT in "$EXTRACTED"/*.sh; do
+        BASENAME=$(basename "$SCRIPT")
+        [ "$BASENAME" = "install.sh" ] && continue
+        cp "$SCRIPT" "$INSTALL_DIR/$BASENAME"
+        chmod +x "$INSTALL_DIR/$BASENAME"
+    done
     echo 90
-    chmod +x "$INSTALL_DIR/"*.sh
+
     cp "$INSTALL_DIR/ownscan.sh" /usr/local/bin/ownscan
     chmod +x /usr/local/bin/ownscan
+
+    rm -rf "$TMP_DIR"
     echo 100
 } | whiptail --title "OwnScan Installer" --gauge "Downloading OwnScan scripts..." 8 60 0
 
@@ -149,7 +169,7 @@ if [ "$SELECTED_VERSION" = "main" ]; then
         | tr -d '[:space:]')
     [ -z "$OWNSCAN_VERSION" ] && OWNSCAN_VERSION="dev"
 else
-    OWNSCAN_VERSION="$SELECTED_VERSION"
+    OWNSCAN_VERSION="${SELECTED_VERSION#v}"
 fi
 
 echo "$OWNSCAN_VERSION" > "$CONFIG_DIR/version"

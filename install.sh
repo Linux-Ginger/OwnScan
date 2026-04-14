@@ -6,10 +6,10 @@
 
 set -e
 
-OWNSCAN_VERSION="1.0.0"
+GITHUB_API="https://api.github.com/repos/Linux-Ginger/ownscan/releases"
+GITHUB_BASE_URL="https://raw.githubusercontent.com/Linux-Ginger/ownscan"
 INSTALL_DIR="/usr/local/lib/ownscan"
 CONFIG_DIR="/etc/ownscan"
-GITHUB_BASE_URL="https://raw.githubusercontent.com/Linux-Ginger/ownscan/main"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -25,6 +25,11 @@ fi
 # Check whiptail
 if ! command -v whiptail &> /dev/null; then
     apt-get install -y whiptail > /dev/null 2>&1
+fi
+
+# Check curl
+if ! command -v curl &> /dev/null; then
+    apt-get install -y curl > /dev/null 2>&1
 fi
 
 # ─────────────────────────────────────────
@@ -47,6 +52,38 @@ Press OK to continue." 18 60
 if ! grep -qEi "ubuntu" /etc/os-release; then
     whiptail --title "Error" --msgbox "OwnScan only supports Ubuntu 24.04 LTS or higher." 8 55
     exit 1
+fi
+
+# ─────────────────────────────────────────
+# Version selection
+# ─────────────────────────────────────────
+SELECTED_VERSION="main"
+SELECTED_TAG="latest (main)"
+
+# Try to fetch releases from GitHub
+RELEASES_JSON=$(curl -fsSL "$GITHUB_API" 2>/dev/null || echo "")
+
+if [ -n "$RELEASES_JSON" ] && echo "$RELEASES_JSON" | grep -q '"tag_name"'; then
+    # Build menu items from releases
+    MENU_ITEMS=()
+    while IFS= read -r line; do
+        TAG=$(echo "$line" | grep '"tag_name"' | sed 's/.*"tag_name": *"\(.*\)".*/\1/')
+        DATE=$(echo "$line" | grep '"published_at"' | sed 's/.*"published_at": *"\([0-9-]*\).*/\1/')
+        [ -z "$TAG" ] && continue
+        MENU_ITEMS+=("$TAG" "$DATE")
+    done <<< "$(echo "$RELEASES_JSON" | grep -E '"tag_name"|"published_at"' | paste - -)"
+
+    if [ ${#MENU_ITEMS[@]} -gt 0 ]; then
+        SELECTED_VERSION=$(whiptail --title "Select version" --menu \
+            "Choose which version to install:" 18 60 8 \
+            "${MENU_ITEMS[@]}" \
+            3>&1 1>&2 2>&3) || SELECTED_VERSION="${MENU_ITEMS[0]}"
+        SELECTED_TAG="$SELECTED_VERSION"
+    fi
+else
+    # No releases found, use main
+    whiptail --title "Version" --msgbox \
+        "No releases found on GitHub. Installing latest version from main branch." 8 60
 fi
 
 # ─────────────────────────────────────────
@@ -88,27 +125,38 @@ mkdir -p "$INSTALL_DIR"
 mkdir -p "$CONFIG_DIR"
 
 # ─────────────────────────────────────────
+# Download scripts from GitHub
+# ─────────────────────────────────────────
+{
+    echo 20
+    BRANCH="$SELECTED_VERSION"
+    curl -fsSL "$GITHUB_BASE_URL/$BRANCH/ownscan.sh" -o "$INSTALL_DIR/ownscan.sh"
+    echo 50
+    curl -fsSL "$GITHUB_BASE_URL/$BRANCH/manage.sh" -o "$INSTALL_DIR/manage.sh"
+    echo 70
+    curl -fsSL "$GITHUB_BASE_URL/$BRANCH/uninstall.sh" -o "$INSTALL_DIR/uninstall.sh"
+    echo 90
+    chmod +x "$INSTALL_DIR/"*.sh
+    cp "$INSTALL_DIR/ownscan.sh" /usr/local/bin/ownscan
+    chmod +x /usr/local/bin/ownscan
+    echo 100
+} | whiptail --title "OwnScan Installer" --gauge "Downloading OwnScan scripts..." 8 60 0
+
+# ─────────────────────────────────────────
 # Save version and config
 # ─────────────────────────────────────────
+# Get actual version number
+if [ "$SELECTED_VERSION" = "main" ]; then
+    OWNSCAN_VERSION=$(curl -fsSL "$GITHUB_BASE_URL/main/version.txt" 2>/dev/null | tr -d '[:space:]' || echo "dev")
+else
+    OWNSCAN_VERSION="$SELECTED_VERSION"
+fi
+
 echo "$OWNSCAN_VERSION" > "$CONFIG_DIR/version"
 cat > "$CONFIG_DIR/config" << EOF
 OWNSCAN_AUTO_UPDATE=$AUTO_UPDATE
 EOF
 chmod 600 "$CONFIG_DIR/config"
-
-# ─────────────────────────────────────────
-# Install ownscan scripts
-# ─────────────────────────────────────────
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-cp "$SCRIPT_DIR/ownscan.sh" "$INSTALL_DIR/ownscan.sh"
-cp "$SCRIPT_DIR/manage.sh" "$INSTALL_DIR/manage.sh"
-cp "$SCRIPT_DIR/uninstall.sh" "$INSTALL_DIR/uninstall.sh"
-chmod +x "$INSTALL_DIR/"*.sh
-
-# Install ownscan command
-cp "$INSTALL_DIR/ownscan.sh" /usr/local/bin/ownscan
-chmod +x /usr/local/bin/ownscan
 
 # ─────────────────────────────────────────
 # Configure vsftpd
@@ -132,7 +180,6 @@ rsa_private_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
 ssl_enable=NO
 EOF
 
-# Fix PAM
 sed -i '/pam_shells.so/d' /etc/pam.d/vsftpd 2>/dev/null || true
 
 systemctl enable vsftpd > /dev/null 2>&1

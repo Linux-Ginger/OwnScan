@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # OwnScan - Your scans, straight to OwnCloud - self-hosted
-# https://github.com/Linux-Ginger/ownscan
+# https://github.com/Linux-Ginger/OwnScan
 # Only for use on a local network, NOT for internet-facing servers.
 
 set -e
 
-GITHUB_API="https://api.github.com/repos/Linux-Ginger/ownscan/releases"
-GITHUB_BASE_URL="https://raw.githubusercontent.com/Linux-Ginger/ownscan"
+GITHUB_API="https://api.github.com/repos/Linux-Ginger/OwnScan/releases"
+GITHUB_BASE_URL="https://raw.githubusercontent.com/Linux-Ginger/OwnScan"
 INSTALL_DIR="/usr/local/lib/ownscan"
 CONFIG_DIR="/etc/ownscan"
 
@@ -129,9 +129,9 @@ mkdir -p "$CONFIG_DIR"
 TMP_DIR=$(mktemp -d)
 
 if [ "$SELECTED_VERSION" = "main" ]; then
-    ZIP_URL="https://github.com/Linux-Ginger/ownscan/archive/refs/heads/main.zip"
+    ZIP_URL="https://github.com/Linux-Ginger/OwnScan/archive/refs/heads/main.zip"
 else
-    ZIP_URL="https://github.com/Linux-Ginger/ownscan/archive/refs/tags/${SELECTED_VERSION}.zip"
+    ZIP_URL="https://github.com/Linux-Ginger/OwnScan/archive/refs/tags/${SELECTED_VERSION}.zip"
 fi
 
 whiptail --title "OwnScan Installer" --infobox "Downloading OwnScan scripts..." 8 60

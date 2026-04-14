@@ -104,7 +104,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cp "$SCRIPT_DIR/ownscan.sh" "$INSTALL_DIR/ownscan.sh"
 cp "$SCRIPT_DIR/manage.sh" "$INSTALL_DIR/manage.sh"
 cp "$SCRIPT_DIR/uninstall.sh" "$INSTALL_DIR/uninstall.sh"
-cp "$SCRIPT_DIR/update-check.sh" "$INSTALL_DIR/update-check.sh"
 chmod +x "$INSTALL_DIR/"*.sh
 
 # Install ownscan command
@@ -148,7 +147,7 @@ Description=OwnScan update checker
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/lib/ownscan/update-check.sh
+ExecStart=/usr/local/bin/ownscan --timer
 EOF
 
 cat > /etc/systemd/system/ownscan-update-check.timer << 'EOF'

@@ -29,6 +29,7 @@ This will:\n\
   - Remove all FTP scan folders\n\
   - Remove all upload scripts\n\
   - Remove all systemd services\n\
+  - Remove the ownscan command\n\
   - Remove vsftpd and inotify-tools\n\
 \n\
 Your OwnCloud files will NOT be deleted.\n\
@@ -37,9 +38,15 @@ This cannot be undone." 18 60; then
     exit 0
 fi
 
-# Stop and remove all ownscan services
 {
     echo 10
+    # Stop and remove update timer
+    systemctl stop ownscan-update-check.timer > /dev/null 2>&1 || true
+    systemctl disable ownscan-update-check.timer > /dev/null 2>&1 || true
+    rm -f /etc/systemd/system/ownscan-update-check.timer
+    rm -f /etc/systemd/system/ownscan-update-check.service
+
+    # Stop and remove all ownscan user services
     for SERVICE in /etc/systemd/system/ownscan-*.service; do
         [ -f "$SERVICE" ] || continue
         NAME=$(basename "$SERVICE" .service)
@@ -62,6 +69,10 @@ fi
     # Remove ownscan files
     rm -rf /home/ownscan
     rm -rf /home/ftpscans
+    rm -rf /usr/local/lib/ownscan
+    rm -rf /etc/ownscan
+    rm -f /usr/local/bin/ownscan
+    rm -f /etc/update-motd.d/99-ownscan-update
     echo 70
 
     # Remove vsftpd and inotify-tools

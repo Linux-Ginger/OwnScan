@@ -23,7 +23,7 @@ get_local_version() {
 }
 
 get_remote_version() {
-    curl -fsSL "$GITHUB_VERSION_URL" 2>/dev/null | tr -d '[:space:]'
+    curl -fsSL --connect-timeout 5 "$GITHUB_VERSION_URL" 2>/dev/null | tr -d '[:space:]'
 }
 
 do_update() {
@@ -61,9 +61,6 @@ do_update() {
     echo -e "${GREEN}OwnScan updated to ${REMOTE} successfully.${NC}"
 }
 
-# ─────────────────────────────────────────
-# Update check (called by systemd timer)
-# ─────────────────────────────────────────
 do_check_timer() {
     LOCAL=$(get_local_version)
     REMOTE=$(get_remote_version)
@@ -81,17 +78,14 @@ do_check_timer() {
         cat > "$MOTD_FILE" << MOTDEOF
 #!/bin/bash
 echo ""
-echo "  ⚡ OwnScan update available: $LOCAL → $REMOTE"
-echo "     Run 'sudo ownscan --update' to install."
+echo "  * OwnScan update available: $LOCAL -> $REMOTE"
+echo "    Run 'sudo ownscan --update' to install."
 echo ""
 MOTDEOF
         chmod +x "$MOTD_FILE"
     fi
 }
 
-# ─────────────────────────────────────────
-# Main
-# ─────────────────────────────────────────
 case "$1" in
     --version|-v)
         echo "OwnScan $(get_local_version)"
@@ -99,40 +93,28 @@ case "$1" in
     --manage|-m)
         if [ "$EUID" -ne 0 ]; then echo -e "${RED}Please run as root${NC}"; exit 1; fi
         bash "$INSTALL_DIR/manage.sh"
+        reset
         ;;
     --uninstall)
         if [ "$EUID" -ne 0 ]; then echo -e "${RED}Please run as root${NC}"; exit 1; fi
         bash "$INSTALL_DIR/uninstall.sh"
+        reset
         ;;
     --update|-u)
         if [ "$EUID" -ne 0 ]; then echo -e "${RED}Please run as root${NC}"; exit 1; fi
         do_update
         ;;
-    --check)
-        LOCAL=$(get_local_version)
-        REMOTE=$(get_remote_version)
-        if [ -z "$REMOTE" ]; then
-            echo -e "${RED}Could not reach GitHub.${NC}"; exit 1
-        fi
-        if [ "$LOCAL" = "$REMOTE" ]; then
-            echo -e "${GREEN}OwnScan is up to date (${LOCAL}).${NC}"
-        else
-            echo -e "${ORANGE}Update available: ${LOCAL} → ${REMOTE}${NC}"
-            echo "Run 'sudo ownscan --update' to install."
-        fi
-        ;;
     --timer)
-        # Called by systemd timer only
         do_check_timer
         ;;
-    *)
+    --help|-h|*)
         echo "OwnScan $(get_local_version)"
         echo ""
         echo "Usage:"
-        echo "  ownscan --version     Show current version"
-        echo "  ownscan --manage      Manage users"
-        echo "  ownscan --update      Update OwnScan to latest version"
-        echo "  ownscan --uninstall   Uninstall OwnScan"
-        echo "  ownscan --check       Check if update is available"
+        echo "  ownscan --version     Show the currently installed version"
+        echo "  ownscan --manage      Add, edit or remove users"
+        echo "  ownscan --update      Update OwnScan to the latest version"
+        echo "  ownscan --uninstall   Uninstall OwnScan from this server"
+        echo "  ownscan --help        Show this help message"
         ;;
 esac

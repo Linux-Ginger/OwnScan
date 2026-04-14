@@ -128,38 +128,30 @@ mkdir -p "$CONFIG_DIR"
 # ─────────────────────────────────────────
 TMP_DIR=$(mktemp -d)
 
-{
-    echo 10
-    if [ "$SELECTED_VERSION" = "main" ]; then
-        ZIP_URL="https://github.com/Linux-Ginger/ownscan/archive/refs/heads/main.zip"
-    else
-        ZIP_URL="https://github.com/Linux-Ginger/ownscan/archive/refs/tags/$SELECTED_VERSION.zip"
-    fi
+if [ "$SELECTED_VERSION" = "main" ]; then
+    ZIP_URL="https://github.com/Linux-Ginger/ownscan/archive/refs/heads/main.zip"
+else
+    ZIP_URL="https://github.com/Linux-Ginger/ownscan/archive/refs/tags/${SELECTED_VERSION}.zip"
+fi
 
-    curl -fsSL "$ZIP_URL" -o "$TMP_DIR/ownscan.zip"
-    echo 40
-    apt-get install -y unzip > /dev/null 2>&1
-    unzip -q "$TMP_DIR/ownscan.zip" -d "$TMP_DIR"
-    echo 70
+whiptail --title "OwnScan Installer" --infobox "Downloading OwnScan scripts..." 8 60
 
-    # Find extracted folder (name varies per version)
-    EXTRACTED=$(find "$TMP_DIR" -maxdepth 1 -mindepth 1 -type d | head -1)
+apt-get install -y unzip > /dev/null 2>&1
+curl -fsSL "$ZIP_URL" -o "$TMP_DIR/ownscan.zip"
+unzip -q "$TMP_DIR/ownscan.zip" -d "$TMP_DIR"
 
-    # Install all .sh files except install.sh
-    for SCRIPT in "$EXTRACTED"/*.sh; do
-        BASENAME=$(basename "$SCRIPT")
-        [ "$BASENAME" = "install.sh" ] && continue
-        cp "$SCRIPT" "$INSTALL_DIR/$BASENAME"
-        chmod +x "$INSTALL_DIR/$BASENAME"
-    done
-    echo 90
+EXTRACTED=$(find "$TMP_DIR" -maxdepth 1 -mindepth 1 -type d | head -1)
 
-    cp "$INSTALL_DIR/ownscan.sh" /usr/local/bin/ownscan
-    chmod +x /usr/local/bin/ownscan
+for SCRIPT in "$EXTRACTED"/*.sh; do
+    BASENAME=$(basename "$SCRIPT")
+    [ "$BASENAME" = "install.sh" ] && continue
+    cp "$SCRIPT" "$INSTALL_DIR/$BASENAME"
+    chmod +x "$INSTALL_DIR/$BASENAME"
+done
 
-    rm -rf "$TMP_DIR"
-    echo 100
-} | whiptail --title "OwnScan Installer" --gauge "Downloading OwnScan scripts..." 8 60 0
+cp "$INSTALL_DIR/ownscan.sh" /usr/local/bin/ownscan
+chmod +x /usr/local/bin/ownscan
+rm -rf "$TMP_DIR"
 
 # ─────────────────────────────────────────
 # Save version and config

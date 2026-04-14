@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # OwnScan - Main command + update checker
-# https://github.com/Linux-Ginger/ownscan
+# https://github.com/Linux-Ginger/OwnScan
 
 CONFIG_DIR="/etc/ownscan"
 OWNSCAN_VERSION_FILE="$CONFIG_DIR/version"
 OWNSCAN_CONFIG="$CONFIG_DIR/config"
 INSTALL_DIR="/usr/local/lib/ownscan"
-GITHUB_VERSION_URL="https://raw.githubusercontent.com/Linux-Ginger/ownscan/main/version.txt"
-GITHUB_BASE_URL="https://raw.githubusercontent.com/Linux-Ginger/ownscan/main"
+GITHUB_VERSION_URL="https://raw.githubusercontent.com/Linux-Ginger/OwnScan/main/version.txt"
+GITHUB_BASE_URL="https://raw.githubusercontent.com/Linux-Ginger/OwnScan/main"
 MOTD_FILE="/etc/update-motd.d/99-ownscan-update"
 
 RED='\033[0;31m'

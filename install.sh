@@ -135,24 +135,29 @@ else
     ZIP_URL="https://github.com/Linux-Ginger/OwnScan/archive/refs/tags/${SELECTED_VERSION}.zip"
 fi
 
-whiptail --title "OwnScan Installer" --infobox "Downloading OwnScan scripts, please wait..." 8 60
+export ZIP_URL TMP_DIR INSTALL_DIR
 
-apt-get install -y unzip > /dev/null 2>&1
-curl -fsSL "$ZIP_URL" -o "$TMP_DIR/ownscan.zip"
-unzip -q "$TMP_DIR/ownscan.zip" -d "$TMP_DIR"
-
-EXTRACTED=$(find "$TMP_DIR" -maxdepth 1 -mindepth 1 -type d | head -1)
-
-for SCRIPT in "$EXTRACTED"/*.sh; do
-    BASENAME=$(basename "$SCRIPT")
-    [ "$BASENAME" = "install.sh" ] && continue
-    cp "$SCRIPT" "$INSTALL_DIR/$BASENAME"
-    chmod +x "$INSTALL_DIR/$BASENAME"
-done
-
-cp "$INSTALL_DIR/ownscan.sh" /usr/local/bin/ownscan
-chmod +x /usr/local/bin/ownscan
-rm -rf "$TMP_DIR"
+{
+    echo 10
+    apt-get install -y unzip > /dev/null 2>&1
+    echo 30
+    curl -fsSL "$ZIP_URL" -o "$TMP_DIR/ownscan.zip"
+    echo 60
+    unzip -q "$TMP_DIR/ownscan.zip" -d "$TMP_DIR"
+    echo 70
+    EXTRACTED=$(find "$TMP_DIR" -maxdepth 1 -mindepth 1 -type d | head -1)
+    for SCRIPT in "$EXTRACTED"/*.sh; do
+        BASENAME=$(basename "$SCRIPT")
+        [ "$BASENAME" = "install.sh" ] && continue
+        cp "$SCRIPT" "$INSTALL_DIR/$BASENAME"
+        chmod +x "$INSTALL_DIR/$BASENAME"
+    done
+    echo 90
+    cp "$INSTALL_DIR/ownscan.sh" /usr/local/bin/ownscan
+    chmod +x /usr/local/bin/ownscan
+    rm -rf "$TMP_DIR"
+    echo 100
+} | whiptail --title "OwnScan Installer" --gauge "Downloading OwnScan scripts..." 8 60 0
 
 # ─────────────────────────────────────────
 # Save version and config

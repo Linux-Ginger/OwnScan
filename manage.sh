@@ -22,6 +22,10 @@ fi
 
 source "$OWNSCAN_CONFIG" 2>/dev/null || true
 
+# Save initial state for change detection
+INITIAL_USERS=$(ls /home/ownscan/*.env 2>/dev/null | xargs -I{} basename {} .env | sort | tr '\n' ',')
+INITIAL_AUTO_UPDATE="$OWNSCAN_AUTO_UPDATE"
+
 # ─────────────────────────────────────────
 # List users
 # ─────────────────────────────────────────
@@ -47,7 +51,6 @@ list_users() {
 # Add user
 # ─────────────────────────────────────────
 add_user() {
-    # Username with back/retry loop
     while true; do
         FTP_USER=$(whiptail --title "Add user" --inputbox \
 "Choose a name for this user.
@@ -77,7 +80,6 @@ Is this correct?" 8 40; then
         fi
     done
 
-    # Printer password
     while true; do
         FTP_PASS=$(whiptail --title "Add user" --passwordbox \
 "Choose a password for the printer login.
@@ -95,7 +97,6 @@ which the printer will use to connect to OwnScan." \
         break
     done
 
-    # OwnCloud URL
     while true; do
         OC_URL=$(whiptail --title "Add user" --inputbox \
 "Enter your OwnCloud server address.
@@ -107,13 +108,11 @@ Example: 192.168.1.10" \
             whiptail --title "Error" --msgbox "OwnCloud URL cannot be empty." 8 45
             continue
         fi
-        # Strip http:// or https:// if user added it anyway
         OC_URL=$(echo "$OC_URL" | sed 's|^https\?://||')
         OC_URL="http://$OC_URL"
         break
     done
 
-    # OwnCloud username
     while true; do
         OC_USER=$(whiptail --title "Add user" --inputbox \
 "Enter your OwnCloud username.
@@ -130,7 +129,6 @@ Note: case-sensitive." \
         break
     done
 
-    # OwnCloud password
     while true; do
         OC_PASS=$(whiptail --title "Add user" --passwordbox \
 "Enter your OwnCloud password.
@@ -147,7 +145,6 @@ Note: case-sensitive." \
         break
     done
 
-    # OwnCloud folder
     while true; do
         OC_FOLDER=$(whiptail --title "Add user" --inputbox \
 "Enter the OwnCloud folder where scans will be saved.
@@ -163,7 +160,6 @@ If this folder does not exist, it will be created." \
         break
     done
 
-    # Create FTP user
     SCAN_DIR="/home/ftpscans/$FTP_USER"
     mkdir -p "$SCAN_DIR"
     useradd -m -s /bin/false -d "$SCAN_DIR" "$FTP_USER" 2>/dev/null || true
@@ -171,11 +167,9 @@ If this folder does not exist, it will be created." \
     chown "$FTP_USER":"$FTP_USER" "$SCAN_DIR"
     chmod 755 "$SCAN_DIR"
 
-    # Create OwnCloud folder
     curl -s -u "$OC_USER:$OC_PASS" -X MKCOL \
         "$OC_URL/remote.php/dav/files/$OC_USER/$OC_FOLDER/" > /dev/null 2>&1 || true
 
-    # Save .env
     ENV_FILE="/home/ownscan/$FTP_USER.env"
     cat > "$ENV_FILE" << ENVEOF
 OWNCLOUD_URL=$OC_URL/remote.php/dav/files/$OC_USER/$OC_FOLDER
@@ -185,7 +179,6 @@ SCAN_DIR=$SCAN_DIR
 ENVEOF
     chmod 600 "$ENV_FILE"
 
-    # Create upload script
     SCRIPT="/home/ownscan/$FTP_USER-upload.sh"
     cat > "$SCRIPT" << SCRIPTEOF
 #!/bin/bash
@@ -200,7 +193,6 @@ done
 SCRIPTEOF
     chmod 700 "$SCRIPT"
 
-    # Create systemd service
     SERVICE="/etc/systemd/system/ownscan-$FTP_USER.service"
     cat > "$SERVICE" << SVCEOF
 [Unit]
@@ -249,19 +241,20 @@ edit_user() {
     MENU_ITEMS=()
     I=1
     for U in "${USERS[@]}"; do
-        MENU_ITEMS+=("$U" "$I.")
+        MENU_ITEMS+=("$I. $U" "")
         I=$((I+1))
     done
 
-    FTP_USER=$(whiptail --title "Edit user" --nocancel --menu \
+    FTP_USER_ENTRY=$(whiptail --title "Edit user" --nocancel --menu \
         "Select user to edit:" 16 50 8 \
         "${MENU_ITEMS[@]}" \
-        "< Back" "" \
         3>&1 1>&2 2>&3) || return
-    [ "$FTP_USER" = "< Back" ] && return
 
-    ACTION=$(whiptail --title "Edit $FTP_USER" --menu \
-        "What do you want to change?" 14 60 4 \
+    # Strip number prefix
+    FTP_USER=$(echo "$FTP_USER_ENTRY" | sed 's/^[0-9]*\. //')
+
+    ACTION=$(whiptail --title "Edit $FTP_USER" --nocancel --menu \
+        "What do you want to change?" 14 60 3 \
         "1" "Change printer password" \
         "2" "Change OwnCloud password" \
         "3" "Change OwnCloud folder" \
@@ -279,7 +272,7 @@ edit_user() {
                 break
             done
             echo "$FTP_USER:$NEW_PASS" | chpasswd
-            whiptail --title "Done" --msgbox "Printer password updated for $FTP_USER." 8 50
+            whiptail --title "Done" --msgbox "Printer password updated for $FTP_USER." 8 52
             ;;
         2)
             while true; do
@@ -294,7 +287,7 @@ edit_user() {
             sed -i "s/^OWNCLOUD_PASS=.*/OWNCLOUD_PASS=$NEW_OC_PASS/" \
                 "/home/ownscan/$FTP_USER.env"
             systemctl restart "ownscan-$FTP_USER" > /dev/null 2>&1
-            whiptail --title "Done" --msgbox "OwnCloud password updated for $FTP_USER." 8 50
+            whiptail --title "Done" --msgbox "OwnCloud password updated for $FTP_USER." 8 52
             ;;
         3)
             while true; do
@@ -315,7 +308,7 @@ If this folder does not exist, it will be created." \
             sed -i "s|^OWNCLOUD_URL=.*|OWNCLOUD_URL=$NEW_URL|" \
                 "/home/ownscan/$FTP_USER.env"
             systemctl restart "ownscan-$FTP_USER" > /dev/null 2>&1
-            whiptail --title "Done" --msgbox "OwnCloud folder updated for $FTP_USER." 8 50
+            whiptail --title "Done" --msgbox "OwnCloud folder updated for $FTP_USER." 8 52
             ;;
     esac
 }
@@ -333,19 +326,19 @@ delete_user() {
     MENU_ITEMS=()
     I=1
     for U in "${USERS[@]}"; do
-        MENU_ITEMS+=("$U" "$I.")
+        MENU_ITEMS+=("$I. $U" "")
         I=$((I+1))
     done
 
-    FTP_USER=$(whiptail --title "Delete user" --nocancel --menu \
+    FTP_USER_ENTRY=$(whiptail --title "Delete user" --nocancel --menu \
         "Select user to delete:" 16 50 8 \
         "${MENU_ITEMS[@]}" \
-        "< Back" "" \
         3>&1 1>&2 2>&3) || return
-    [ "$FTP_USER" = "< Back" ] && return
+
+    FTP_USER=$(echo "$FTP_USER_ENTRY" | sed 's/^[0-9]*\. //')
 
     if ! whiptail --title "Confirm" --yesno \
-        "Are you sure you want to delete '$FTP_USER'?\nThis cannot be undone." 10 50; then
+        "Are you sure you want to delete '$FTP_USER'?\nThis cannot be undone." 10 52; then
         return
     fi
 
@@ -396,10 +389,8 @@ No:  You will need to update manually by running:
 # ─────────────────────────────────────────
 # Main menu
 # ─────────────────────────────────────────
-CHANGES=""
-
 while true; do
-    ACTION=$(whiptail --title "OwnScan - Management" --menu \
+    ACTION=$(whiptail --title "OwnScan - Management" --nocancel --menu \
         "What do you want to do?" 18 60 6 \
         "1" "List users" \
         "2" "Add user" \
@@ -411,27 +402,30 @@ while true; do
 
     case $ACTION in
         1) list_users ;;
-        2)
-            add_user
-            CHANGES="$CHANGES\n- User added or modified"
-            ;;
-        3)
-            edit_user
-            CHANGES="$CHANGES\n- User settings changed"
-            ;;
-        4)
-            delete_user
-            CHANGES="$CHANGES\n- User deleted"
-            ;;
-        5)
-            toggle_autoupdate
-            CHANGES="$CHANGES\n- Auto-update changed to: $OWNSCAN_AUTO_UPDATE"
-            ;;
+        2) add_user ;;
+        3) edit_user ;;
+        4) delete_user ;;
+        5) toggle_autoupdate ;;
         6) break ;;
     esac
 done
 
-# Show summary on exit
+# ─────────────────────────────────────────
+# Change detection on exit
+# ─────────────────────────────────────────
+FINAL_USERS=$(ls /home/ownscan/*.env 2>/dev/null | xargs -I{} basename {} .env | sort | tr '\n' ',' || echo "")
+FINAL_AUTO_UPDATE="$OWNSCAN_AUTO_UPDATE"
+
+CHANGES=""
+
+if [ "$INITIAL_USERS" != "$FINAL_USERS" ]; then
+    CHANGES="$CHANGES\n- User list changed"
+fi
+
+if [ "$INITIAL_AUTO_UPDATE" != "$FINAL_AUTO_UPDATE" ]; then
+    CHANGES="$CHANGES\n- Auto-update changed to: $FINAL_AUTO_UPDATE"
+fi
+
 if [ -n "$CHANGES" ]; then
     whiptail --title "OwnScan - Summary" --msgbox \
 "Changes made this session:

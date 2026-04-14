@@ -6,11 +6,14 @@
 
 set -e
 
-# Colors
+OWNSCAN_VERSION="1.0.0"
+INSTALL_DIR="/usr/local/lib/ownscan"
+CONFIG_DIR="/etc/ownscan"
+GITHUB_BASE_URL="https://raw.githubusercontent.com/Linux-Ginger/ownscan/main"
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 ORANGE='\033[0;33m'
-BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Check root
@@ -41,9 +44,24 @@ Press OK to continue." 18 60
 # ─────────────────────────────────────────
 # Check OS
 # ─────────────────────────────────────────
-if ! grep -qEi "debian|ubuntu" /etc/os-release; then
-    whiptail --title "Error" --msgbox "OwnScan only supports Debian/Ubuntu." 8 50
+if ! grep -qEi "ubuntu" /etc/os-release; then
+    whiptail --title "Error" --msgbox "OwnScan only supports Ubuntu 24.04 LTS or higher." 8 55
     exit 1
+fi
+
+# ─────────────────────────────────────────
+# Auto-update
+# ─────────────────────────────────────────
+if whiptail --title "Auto-update" --yesno "\
+Do you want to enable auto-updates?\n\
+\n\
+Yes: OwnScan will automatically update itself every 24 hours.\n\
+\n\
+No:  OwnScan will check for updates every 24 hours and notify\n\
+     you on login when a new version is available." 14 65; then
+    AUTO_UPDATE="true"
+else
+    AUTO_UPDATE="false"
 fi
 
 # ─────────────────────────────────────────
@@ -51,7 +69,6 @@ fi
 # ─────────────────────────────────────────
 {
     echo 10
-    sleep 0.5
     apt-get update -y > /dev/null 2>&1
     echo 30
     apt-get install -y vsftpd inotify-tools curl > /dev/null 2>&1
@@ -67,6 +84,32 @@ fi
 # ─────────────────────────────────────────
 mkdir -p /home/ftpscans
 mkdir -p /home/ownscan
+mkdir -p "$INSTALL_DIR"
+mkdir -p "$CONFIG_DIR"
+
+# ─────────────────────────────────────────
+# Save version and config
+# ─────────────────────────────────────────
+echo "$OWNSCAN_VERSION" > "$CONFIG_DIR/version"
+cat > "$CONFIG_DIR/config" << EOF
+OWNSCAN_AUTO_UPDATE=$AUTO_UPDATE
+EOF
+chmod 600 "$CONFIG_DIR/config"
+
+# ─────────────────────────────────────────
+# Install ownscan scripts
+# ─────────────────────────────────────────
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+cp "$SCRIPT_DIR/ownscan.sh" "$INSTALL_DIR/ownscan.sh"
+cp "$SCRIPT_DIR/manage.sh" "$INSTALL_DIR/manage.sh"
+cp "$SCRIPT_DIR/uninstall.sh" "$INSTALL_DIR/uninstall.sh"
+cp "$SCRIPT_DIR/update-check.sh" "$INSTALL_DIR/update-check.sh"
+chmod +x "$INSTALL_DIR/"*.sh
+
+# Install ownscan command
+cp "$INSTALL_DIR/ownscan.sh" /usr/local/bin/ownscan
+chmod +x /usr/local/bin/ownscan
 
 # ─────────────────────────────────────────
 # Configure vsftpd
@@ -97,36 +140,57 @@ systemctl enable vsftpd > /dev/null 2>&1
 systemctl restart vsftpd > /dev/null 2>&1
 
 # ─────────────────────────────────────────
+# Setup update checker systemd timer
+# ─────────────────────────────────────────
+cat > /etc/systemd/system/ownscan-update-check.service << 'EOF'
+[Unit]
+Description=OwnScan update checker
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/ownscan/update-check.sh
+EOF
+
+cat > /etc/systemd/system/ownscan-update-check.timer << 'EOF'
+[Unit]
+Description=OwnScan update check every 24 hours
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=24h
+
+[Install]
+WantedBy=timers.target
+EOF
+
+systemctl daemon-reload > /dev/null 2>&1
+systemctl enable ownscan-update-check.timer > /dev/null 2>&1
+systemctl start ownscan-update-check.timer > /dev/null 2>&1
+
+# ─────────────────────────────────────────
 # Add first user
 # ─────────────────────────────────────────
 whiptail --title "OwnScan Installer" --msgbox "Now you will add your first OwnCloud user." 8 50
 
 add_user() {
-    # Username
     FTP_USER=$(whiptail --title "Add user" --inputbox "Enter a username for this user (used for FTP login):" 8 60 3>&1 1>&2 2>&3)
     [ -z "$FTP_USER" ] && return
 
-    # FTP password
     FTP_PASS=$(whiptail --title "Add user" --passwordbox "Enter FTP password for $FTP_USER:" 8 60 3>&1 1>&2 2>&3)
     [ -z "$FTP_PASS" ] && return
 
-    # OwnCloud URL
     OC_URL=$(whiptail --title "Add user" --inputbox "Enter OwnCloud URL (e.g. http://192.168.1.10):" 8 60 3>&1 1>&2 2>&3)
     [ -z "$OC_URL" ] && return
 
-    # OwnCloud username
     OC_USER=$(whiptail --title "Add user" --inputbox "Enter OwnCloud username:" 8 60 3>&1 1>&2 2>&3)
     [ -z "$OC_USER" ] && return
 
-    # OwnCloud password
     OC_PASS=$(whiptail --title "Add user" --passwordbox "Enter OwnCloud password for $OC_USER:" 8 60 3>&1 1>&2 2>&3)
     [ -z "$OC_PASS" ] && return
 
-    # OwnCloud scan folder
-    OC_FOLDER=$(whiptail --title "Add user" --inputbox "Enter OwnCloud folder to save scans in (e.g. Scans):" 8 60 "Scans" 3>&1 1>&2 2>&3)
+    OC_FOLDER=$(whiptail --title "Add user" --inputbox "Enter OwnCloud folder to save scans in:" 8 60 "Scans" 3>&1 1>&2 2>&3)
     [ -z "$OC_FOLDER" ] && OC_FOLDER="Scans"
 
-    # Create FTP user
     SCAN_DIR="/home/ftpscans/$FTP_USER"
     mkdir -p "$SCAN_DIR"
     useradd -m -s /bin/false -d "$SCAN_DIR" "$FTP_USER" 2>/dev/null || true
@@ -134,10 +198,8 @@ add_user() {
     chown "$FTP_USER":"$FTP_USER" "$SCAN_DIR"
     chmod 755 "$SCAN_DIR"
 
-    # Create OwnCloud folder via WebDAV
     curl -s -u "$OC_USER:$OC_PASS" -X MKCOL "$OC_URL/remote.php/dav/files/$OC_USER/$OC_FOLDER/" > /dev/null 2>&1 || true
 
-    # Save .env
     ENV_FILE="/home/ownscan/$FTP_USER.env"
     cat > "$ENV_FILE" << ENVEOF
 OWNCLOUD_URL=$OC_URL/remote.php/dav/files/$OC_USER/$OC_FOLDER
@@ -147,7 +209,6 @@ SCAN_DIR=$SCAN_DIR
 ENVEOF
     chmod 600 "$ENV_FILE"
 
-    # Create upload script
     SCRIPT="/home/ownscan/$FTP_USER-upload.sh"
     cat > "$SCRIPT" << SCRIPTEOF
 #!/bin/bash
@@ -161,7 +222,6 @@ done
 SCRIPTEOF
     chmod 700 "$SCRIPT"
 
-    # Create systemd service
     SERVICE="/etc/systemd/system/ownscan-$FTP_USER.service"
     cat > "$SERVICE" << SVCEOF
 [Unit]
@@ -180,7 +240,6 @@ SVCEOF
     systemctl enable "ownscan-$FTP_USER" > /dev/null 2>&1
     systemctl start "ownscan-$FTP_USER" > /dev/null 2>&1
 
-    # Get server IP
     SERVER_IP=$(hostname -I | awk '{print $1}')
 
     whiptail --title "User added!" --msgbox "\
@@ -199,9 +258,6 @@ Scans will appear in OwnCloud folder: $OC_FOLDER" 18 60
 
 add_user
 
-# ─────────────────────────────────────────
-# Add more users?
-# ─────────────────────────────────────────
 while whiptail --title "OwnScan Installer" --yesno "Do you want to add another user?" 8 50; do
     add_user
 done
@@ -210,10 +266,13 @@ done
 # Done
 # ─────────────────────────────────────────
 whiptail --title "OwnScan Installer" --msgbox "\
-OwnScan has been installed successfully!\n\
+OwnScan $OWNSCAN_VERSION has been installed successfully!\n\
 \n\
-To manage users later, run:\n\
-  bash manage.sh\n\
+Available commands:\n\
+  ownscan --version     Show current version\n\
+  ownscan --manage      Manage users\n\
+  ownscan --update      Update OwnScan\n\
+  ownscan --uninstall   Uninstall OwnScan\n\
+  ownscan --check       Check for updates\n\
 \n\
-To uninstall, run:\n\
-  bash uninstall.sh" 14 60
+Auto-update: $AUTO_UPDATE" 16 60

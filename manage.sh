@@ -245,7 +245,7 @@ edit_user() {
         I=$((I+1))
     done
 
-    FTP_USER_ENTRY=$(whiptail --title "Edit user" --nocancel --menu \
+    FTP_USER_ENTRY=$(whiptail --title "Edit user" --cancel-button "Back" --menu \
         "Select user to edit:" 16 50 8 \
         "${MENU_ITEMS[@]}" \
         3>&1 1>&2 2>&3) || return
@@ -330,7 +330,7 @@ delete_user() {
         I=$((I+1))
     done
 
-    FTP_USER_ENTRY=$(whiptail --title "Delete user" --nocancel --menu \
+    FTP_USER_ENTRY=$(whiptail --title "Delete user" --cancel-button "Back" --menu \
         "Select user to delete:" 16 50 8 \
         "${MENU_ITEMS[@]}" \
         3>&1 1>&2 2>&3) || return

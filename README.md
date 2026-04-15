@@ -85,7 +85,7 @@ These models are confirmed to support Scan to FTP based on official Brother docu
 ## Installation
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Linux-Ginger/ownscan/main/install.sh | bash
+apt install curl -y && curl -sSL https://raw.githubusercontent.com/Linux-Ginger/ownscan/main/install.sh | bash
 ```
 
 ## Managing users
@@ -105,7 +105,7 @@ This opens an interactive menu where you can:
 ## Uninstall
 
 ```bash
-bash uninstall.sh
+ownscan --uninstall
 ```
 
 This opens an interactive uninstaller that removes all users, services, scripts and packages. Your OwnCloud files will not be deleted.

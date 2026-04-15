@@ -93,7 +93,7 @@ apt install curl -y && curl -sSL https://raw.githubusercontent.com/Linux-Ginger/
 To add, edit or remove users after installation:
 
 ```bash
-bash manage.sh
+ownscan --manage
 ```
 
 This opens an interactive menu where you can:

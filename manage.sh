@@ -22,6 +22,24 @@ fi
 
 source "$OWNSCAN_CONFIG" 2>/dev/null || true
 
+# ─────────────────────────────────────────
+# Helper: safely write .env file
+# ─────────────────────────────────────────
+write_env() {
+    local env_file="$1"
+    local url="$2"
+    local user="$3"
+    local pass="$4"
+    local scan_dir="$5"
+    cat > "$env_file" << ENVEOF
+OWNCLOUD_URL=$(printf '%q' "$url")
+OWNCLOUD_USER=$(printf '%q' "$user")
+OWNCLOUD_PASS=$(printf '%q' "$pass")
+SCAN_DIR=$(printf '%q' "$scan_dir")
+ENVEOF
+    chmod 600 "$env_file"
+}
+
 # Save initial state for change detection
 INITIAL_USERS=$(ls /home/ownscan/*.env 2>/dev/null | xargs -I{} basename {} .env | sort | tr '\n' ',')
 INITIAL_AUTO_UPDATE="$OWNSCAN_AUTO_UPDATE"
@@ -171,15 +189,11 @@ If this folder does not exist, it will be created." \
         "$OC_URL/remote.php/dav/files/$OC_USER/$OC_FOLDER/" > /dev/null 2>&1 || true
 
     ENV_FILE="/home/ownscan/$FTP_USER.env"
-    ESCAPED_OC_USER=$(printf '%q' "$OC_USER")
-    ESCAPED_OC_PASS=$(printf '%q' "$OC_PASS")
-    cat > "$ENV_FILE" << ENVEOF
-OWNCLOUD_URL=$OC_URL/remote.php/dav/files/$OC_USER/$OC_FOLDER
-OWNCLOUD_USER=$ESCAPED_OC_USER
-OWNCLOUD_PASS=$ESCAPED_OC_PASS
-SCAN_DIR=$SCAN_DIR
-ENVEOF
-    chmod 600 "$ENV_FILE"
+    write_env "$ENV_FILE" \
+        "$OC_URL/remote.php/dav/files/$OC_USER/$OC_FOLDER" \
+        "$OC_USER" \
+        "$OC_PASS" \
+        "$SCAN_DIR"
 
     SCRIPT="/home/ownscan/$FTP_USER-upload.sh"
     cat > "$SCRIPT" << SCRIPTEOF
@@ -290,13 +304,11 @@ edit_user() {
             done
             ESCAPED_NEW_OC_PASS=$(printf '%q' "$NEW_OC_PASS")
             source "/home/ownscan/$FTP_USER.env"
-            cat > "/home/ownscan/$FTP_USER.env" << ENVEOF
-OWNCLOUD_URL=$OWNCLOUD_URL
-OWNCLOUD_USER=$OWNCLOUD_USER
-OWNCLOUD_PASS=$ESCAPED_NEW_OC_PASS
-SCAN_DIR=$SCAN_DIR
-ENVEOF
-            chmod 600 "/home/ownscan/$FTP_USER.env"
+            write_env "/home/ownscan/$FTP_USER.env" \
+                "$OWNCLOUD_URL" \
+                "$OWNCLOUD_USER" \
+                "$NEW_OC_PASS" \
+                "$SCAN_DIR"
             systemctl restart "ownscan-$FTP_USER" > /dev/null 2>&1
             whiptail --title "Done" --msgbox "OwnCloud password updated for $FTP_USER." 8 52
             ;;
@@ -316,13 +328,11 @@ If this folder does not exist, it will be created." \
             source "/home/ownscan/$FTP_USER.env"
             BASE_URL=$(echo "$OWNCLOUD_URL" | sed 's|/[^/]*$||')
             NEW_URL="$BASE_URL/$NEW_FOLDER"
-            cat > "/home/ownscan/$FTP_USER.env" << ENVEOF
-OWNCLOUD_URL=$NEW_URL
-OWNCLOUD_USER=$OWNCLOUD_USER
-OWNCLOUD_PASS=$OWNCLOUD_PASS
-SCAN_DIR=$SCAN_DIR
-ENVEOF
-            chmod 600 "/home/ownscan/$FTP_USER.env"
+            write_env "/home/ownscan/$FTP_USER.env" \
+                "$NEW_URL" \
+                "$OWNCLOUD_USER" \
+                "$OWNCLOUD_PASS" \
+                "$SCAN_DIR"
             systemctl restart "ownscan-$FTP_USER" > /dev/null 2>&1
             whiptail --title "Done" --msgbox "OwnCloud folder updated for $FTP_USER." 8 52
             ;;

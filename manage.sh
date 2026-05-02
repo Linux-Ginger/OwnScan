@@ -289,8 +289,14 @@ edit_user() {
                 break
             done
             ESCAPED_NEW_OC_PASS=$(printf '%q' "$NEW_OC_PASS")
-            sed -i "s/^OWNCLOUD_PASS=.*/OWNCLOUD_PASS=$ESCAPED_NEW_OC_PASS/" \
-                "/home/ownscan/$FTP_USER.env"
+            source "/home/ownscan/$FTP_USER.env"
+            cat > "/home/ownscan/$FTP_USER.env" << ENVEOF
+OWNCLOUD_URL=$OWNCLOUD_URL
+OWNCLOUD_USER=$OWNCLOUD_USER
+OWNCLOUD_PASS=$ESCAPED_NEW_OC_PASS
+SCAN_DIR=$SCAN_DIR
+ENVEOF
+            chmod 600 "/home/ownscan/$FTP_USER.env"
             systemctl restart "ownscan-$FTP_USER" > /dev/null 2>&1
             whiptail --title "Done" --msgbox "OwnCloud password updated for $FTP_USER." 8 52
             ;;
@@ -310,8 +316,13 @@ If this folder does not exist, it will be created." \
             source "/home/ownscan/$FTP_USER.env"
             BASE_URL=$(echo "$OWNCLOUD_URL" | sed 's|/[^/]*$||')
             NEW_URL="$BASE_URL/$NEW_FOLDER"
-            sed -i "s|^OWNCLOUD_URL=.*|OWNCLOUD_URL=$NEW_URL|" \
-                "/home/ownscan/$FTP_USER.env"
+            cat > "/home/ownscan/$FTP_USER.env" << ENVEOF
+OWNCLOUD_URL=$NEW_URL
+OWNCLOUD_USER=$OWNCLOUD_USER
+OWNCLOUD_PASS=$OWNCLOUD_PASS
+SCAN_DIR=$SCAN_DIR
+ENVEOF
+            chmod 600 "/home/ownscan/$FTP_USER.env"
             systemctl restart "ownscan-$FTP_USER" > /dev/null 2>&1
             whiptail --title "Done" --msgbox "OwnCloud folder updated for $FTP_USER." 8 52
             ;;

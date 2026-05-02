@@ -7,8 +7,7 @@ CONFIG_DIR="/etc/ownscan"
 OWNSCAN_VERSION_FILE="$CONFIG_DIR/version"
 OWNSCAN_CONFIG="$CONFIG_DIR/config"
 INSTALL_DIR="/usr/local/lib/ownscan"
-GITHUB_VERSION_URL="https://raw.githubusercontent.com/Linux-Ginger/OwnScan/main/version.txt"
-GITHUB_BASE_URL="https://raw.githubusercontent.com/Linux-Ginger/OwnScan/main"
+GITHUB_API="https://api.github.com/repos/Linux-Ginger/OwnScan/releases/latest"
 MOTD_FILE="/etc/update-motd.d/99-ownscan-update"
 
 RED='\033[0;31m'
@@ -23,7 +22,15 @@ get_local_version() {
 }
 
 get_remote_version() {
-    curl -fsSL --connect-timeout 5 "$GITHUB_VERSION_URL" 2>/dev/null | tr -d '[:space:]'
+    curl -fsSL --connect-timeout 5 "$GITHUB_API" 2>/dev/null \
+        | grep '"tag_name"' \
+        | sed 's/.*"tag_name": *"v\?\([^"]*\)".*/\1/' \
+        | tr -d '[:space:]'
+}
+
+get_release_zip_url() {
+    local tag="$1"
+    echo "https://github.com/Linux-Ginger/OwnScan/archive/refs/tags/v${tag}.zip"
 }
 
 do_update() {
@@ -42,12 +49,24 @@ do_update() {
 
     echo -e "${ORANGE}Updating OwnScan from ${LOCAL} to ${REMOTE}...${NC}"
 
-    curl -fsSL "$GITHUB_BASE_URL/ownscan.sh" -o "$INSTALL_DIR/ownscan.sh"
-    curl -fsSL "$GITHUB_BASE_URL/manage.sh" -o "$INSTALL_DIR/manage.sh"
-    curl -fsSL "$GITHUB_BASE_URL/uninstall.sh" -o "$INSTALL_DIR/uninstall.sh"
+    TMP_DIR=$(mktemp -d)
+    ZIP_URL=$(get_release_zip_url "$REMOTE")
 
-    chmod +x "$INSTALL_DIR/"*.sh
+    curl -fsSL "$ZIP_URL" -o "$TMP_DIR/ownscan.zip"
+    apt-get install -y unzip > /dev/null 2>&1
+    unzip -q "$TMP_DIR/ownscan.zip" -d "$TMP_DIR"
+
+    EXTRACTED=$(find "$TMP_DIR" -maxdepth 1 -mindepth 1 -type d | head -1)
+    for SCRIPT in "$EXTRACTED"/*.sh; do
+        BASENAME=$(basename "$SCRIPT")
+        [ "$BASENAME" = "install.sh" ] && continue
+        cp "$SCRIPT" "$INSTALL_DIR/$BASENAME"
+        chmod +x "$INSTALL_DIR/$BASENAME"
+    done
+
     cp "$INSTALL_DIR/ownscan.sh" /usr/local/bin/ownscan
+    chmod +x /usr/local/bin/ownscan
+    rm -rf "$TMP_DIR"
 
     echo "$REMOTE" > "$OWNSCAN_VERSION_FILE"
 

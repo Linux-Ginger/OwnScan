@@ -373,8 +373,8 @@ If this folder does not exist, it will be created." \
     ENV_FILE="/home/ownscan/$FTP_USER.env"
     cat > "$ENV_FILE" << ENVEOF
 OWNCLOUD_URL=$OC_URL/remote.php/dav/files/$OC_USER/$OC_FOLDER
-OWNCLOUD_USER=$OC_USER
-OWNCLOUD_PASS=$OC_PASS
+OWNCLOUD_USER='$OC_USER'
+OWNCLOUD_PASS='$OC_PASS'
 SCAN_DIR=$SCAN_DIR
 ENVEOF
     chmod 600 "$ENV_FILE"

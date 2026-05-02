@@ -124,6 +124,19 @@ After running the installer, configure your Brother printer via its web interfac
    - **Port**: `21`
    - **Passive mode**: ON
 
+## Duplex (double-sided) scanning
+
+Automatic duplex scanning via the ADF is only supported on Brother models with a duplex ADF. Check your printer's specifications to see if your model supports this.
+
+If your printer does not support automatic duplex scanning, you can still scan both sides into one PDF using the flatbed glass:
+
+1. Place the document on the glass
+2. Scan the front side
+3. When prompted, flip the document and press continue
+4. Press done when finished
+
+The result is a single PDF with both sides in OwnCloud.
+
 ## License
 
 GNU General Public License v3.0 — see [LICENSE](LICENSE) for details.
